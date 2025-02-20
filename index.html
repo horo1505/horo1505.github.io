@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Quiz Letteratura Interrogazione 20/02</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --light: #ecf0f1;
+            --correct: #27ae60;
+            --wrong: #e74c3c;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 20px;
+            background: var(--light);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .config-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .config-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid var(--primary);
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .topic-selector {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .topic-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .topic-btn.active {
+            background: var(--secondary);
+            transform: scale(1.02);
+        }
+
+        .quiz-box {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            position: relative;
+            min-height: 400px;
+        }
+
+        .question-counter {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        #question {
+            font-size: 1.3em;
+            margin: 30px 0;
+            line-height: 1.4;
+        }
+
+        .options-container {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option {
+            padding: 15px;
+            border: 2px solid var(--light);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option:hover {
+            transform: translateX(5px);
+            border-color: var(--secondary);
+        }
+
+        .option.correct {
+            background: var(--correct);
+            color: white;
+            border-color: var(--correct);
+        }
+
+        .option.wrong {
+            background: var(--wrong);
+            color: white;
+            border-color: var(--wrong);
+        }
+
+        .score-board {
+            text-align: center;
+            font-size: 1.3em;
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--primary);
+            color: white;
+        }
+
+        button:hover {
+            background: var(--secondary);
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Quiz Letteratura Interrogazione 20/02</h1>
+
+        <div class="config-panel">
+            <div class="config-item">
+                <label>Numero domande:</label>
+                <input type="number" id="numQuestions" min="1" max="30" value="10">
+            </div>
+            <div class="config-item">
+                <label>🔀 Modalità casuale</label>
+                <input type="checkbox" id="randomize" checked>
+            </div>
+        </div>
+
+        <div class="topic-selector">
+            <button class="topic-btn" data-topic="svevo">Italo Svevo</button>
+            <button class="topic-btn" data-topic="opere_svevo">Opere Svevo</button>
+            <button class="topic-btn" data-topic="pasolini">Pasolini</button>
+            <button class="topic-btn" data-topic="opere_pasolini">Opere Pasolini</button>
+            <button class="topic-btn" data-topic="confronto">Confronto</button>
+        </div>
+
+        <div class="score-board" id="score">Punteggio: 0/0 (0%)</div>
+
+        <div class="quiz-box">
+            <div class="question-counter" id="counter"></div>
+            <div id="question"></div>
+            <div class="options-container" id="options"></div>
+            <div class="nav-buttons">
+                <button id="prevBtn" onclick="prevQuestion()">← Precedente</button>
+                <button id="nextBtn" onclick="nextQuestion()">Successivo →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ★★★ DOMANKE COMPLETE (30 per categoria) ★★★
+        const questions = {
+            svevo: [
+                {
+                    q: "Perché Svevo è considerato uno scrittore atipico?",
+                    options: [
+                        "Perché scriveva in dialetto triestino",
+                        "Per la doppia attività di scrittore e industriale",
+                        "Per la sua adesione al futurismo"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Quale filosofo influenza maggiormente Svevo?",
+                    options: ["Marx", "Nietzsche", "Schopenhauer"],
+                    correct: 2
+                },
+                {
+                    q: "Cosa simboleggia lo pseudonimo 'Italo Svevo'?",
+                    options: [
+                        "Un omaggio al fascismo",
+                        "La sua origine slava",
+                        "L'unione tra cultura italiana e tedesca"
+                    ],
+                    correct: 2
+                },
+                {
+                    q: "Come interpreta Svevo la teoria darwiniana?",
+                    options: [
+                        "Solo i più forti vincono la lotta per la vita",
+                        "L'evoluzione è una finzione borghese",
+                        "I deboli sopravvivono grazie all'adattamento"
+                    ],
+                    correct: 2
+                },
+                {
+                    q: "Cosa caratterizza i protagonisti sveviani?",
+                    options: [
+                        "Eroismo romantico",
+                        "Rivoluzionariato politico",
+                        "Inettitudine e autoinganno"
+                    ],
+                    correct: 2
+                },
+                {
+                    q: "Qual è il tema centrale de 'La Coscienza di Zeno'?",
+                    options: [
+                        "La lotta di classe",
+                        "L'autoanalisi e l'inetto",
+                        "La rivoluzione industriale"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta Trieste nelle opere di Svevo?",
+                    options: [
+                        "Un simbolo del fascismo",
+                        "Un luogo di isolamento rurale",
+                        "Una città mitteleuropea e multiculturale"
+                    ],
+                    correct: 2
+                },
+                {
+                    q: "Qual è il ruolo della psicanalisi in Svevo?",
+                    options: [
+                        "Terapia per guarire i malati",
+                        "Critica alla borghesia",
+                        "Strumento di analisi interiore"
+                    ],
+                    correct: 2
+                },
+                {
+                    q: "Cosa rappresenta il fumo in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Un simbolo di ribellione",
+                        "Un vizio che simboleggia l'inetto",
+                        "Una metafora della morte"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Qual è il destino tipico dei protagonisti di Svevo?",
+                    options: [
+                        "Successo e realizzazione",
+                        "Rivoluzione sociale",
+                        "Sconfitta e autoinganno"
+                    ],
+                    correct: 2
+                },
+                {
+                    q: "Cosa rappresenta il suicidio in 'Una Vita'?",
+                    options: [
+                        "Un atto eroico",
+                        "La fuga dalla realtà",
+                        "Una critica al capitalismo"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Qual è il rapporto di Svevo con la psicanalisi?",
+                    options: [
+                        "La rifiuta completamente",
+                        "La usa come strumento di analisi",
+                        "La considera una terapia efficace"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta la figura del padre in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Un modello di successo",
+                        "Un simbolo di autorità fascista",
+                        "Un rapporto conflittuale e ambiguo"
+                    ],
+                    correct: 2
+                },
+                {
+                    q: "Cosa simboleggia il duello in 'Una Vita'?",
+                    options: [
+                        "Un atto di coraggio",
+                        "L'incapacità di affrontare la vita",
+                        "Una critica alla borghesia"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta la malattia in Svevo?",
+                    options: [
+                        "Un problema fisico",
+                        "Una condizione esistenziale",
+                        "Una metafora della società"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta la figura di Augusta in 'La Coscienza di Zeno'?",
+                    options: [
+                        "La malattia interiore",
+                        "La ribellione sociale",
+                        "La salute borghese"
+                    ],
+                    correct: 2
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e Guido?",
+                    options: [
+                        "Una lotta di classe",
+                        "Un confronto tra inetto e uomo di successo",
+                        "Un'amicizia fraterna"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il vizio del fumo in Zeno?",
+                    options: [
+                        "Una forma di ribellione",
+                        "Un simbolo della sua debolezza",
+                        "Una critica alla società"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e Carla?",
+                    options: [
+                        "Una relazione stabile",
+                        "Un'illusione di felicità",
+                        "Una critica alla borghesia"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e il dottor S?",
+                    options: [
+                        "Una terapia di successo",
+                        "Un tentativo fallito di cura",
+                        "Una critica alla psicanalisi"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e la moglie Augusta?",
+                    options: [
+                        "Un'armonia perfetta",
+                        "Un contrasto tra malattia e salute",
+                        "Una critica al matrimonio borghese"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e il padre?",
+                    options: [
+                        "Un rapporto di affetto",
+                        "Un conflitto irrisolto",
+                        "Una critica alla famiglia borghese"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e Guido Speier?",
+                    options: [
+                        "Una lotta di classe",
+                        "Un confronto tra inetto e uomo di successo",
+                        "Un'amicizia fraterna"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e la psicanalisi?",
+                    options: [
+                        "Una terapia di successo",
+                        "Un tentativo fallito di autoanalisi",
+                        "Una critica alla psicanalisi"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e la società borghese?",
+                    options: [
+                        "Una piena integrazione",
+                        "Un conflitto interiore",
+                        "Una critica al capitalismo"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e la malattia?",
+                    options: [
+                        "Un problema fisico",
+                        "Una condizione esistenziale",
+                        "Una metafora della società"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e il fumo?",
+                    options: [
+                        "Una forma di ribellione",
+                        "Un simbolo della sua debolezza",
+                        "Una critica alla società"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e la moglie Augusta?",
+                    options: [
+                        "Un'armonia perfetta",
+                        "Un contrasto tra malattia e salute",
+                        "Una critica al matrimonio borghese"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e il padre?",
+                    options: [
+                        "Un rapporto di affetto",
+                        "Un conflitto irrisolto",
+                        "Una critica alla famiglia borghese"
+                    ],
+                    correct: 1
+                }
+            ],
+            
+            opere_svevo: [
+                {
+                    q: "Cosa simboleggia il titolo 'Una Vita'?",
+                    options: [
+                        "Celebrazione della vitalità giovanile",
+                        "Ironia sul suicidio finale del protagonista",
+                        "Omaggio alla filosofia darwiniana"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Chi è il protagonista de 'La Coscienza di Zeno'?",
+                    options: [
+                        "Un industriale di successo",
+                        "Un inetto consapevole della sua condizione",
+                        "Un rivoluzionario politico"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta Macario in 'Una Vita'?",
+                    options: [
+                        "Un alter ego del protagonista",
+                        "Il lottatore darwiniano",
+                        "Un rivoluzionario sociale"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Perché Zeno si rivolge allo psicoanalista?",
+                    options: [
+                        "Curare una depressione",
+                        "Per smettere di fumare",
+                        "Risolvere conflitti familiari"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa accomuna i tre romanzi di Svevo?",
+                    options: [
+                        "Ambientazione futurista",
+                        "Protagonisti inetti e autoingannatori",
+                        "Temi politici marxisti"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il suicidio in 'Una Vita'?",
+                    options: [
+                        "Un atto eroico",
+                        "La fuga dalla realtà",
+                        "Una critica al capitalismo"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il duello in 'Una Vita'?",
+                    options: [
+                        "Un atto di coraggio",
+                        "L'incapacità di affrontare la vita",
+                        "Una critica alla borghesia"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta la malattia in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Un problema fisico",
+                        "Una condizione esistenziale",
+                        "Una metafora della società"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta la figura di Augusta in 'La Coscienza di Zeno'?",
+                    options: [
+                        "La malattia interiore",
+                        "La salute borghese",
+                        "La ribellione sociale"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e Guido in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Una lotta di classe",
+                        "Un confronto tra inetto e uomo di successo",
+                        "Un'amicizia fraterna"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il vizio del fumo in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Una forma di ribellione",
+                        "Un simbolo della sua debolezza",
+                        "Una critica alla società"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e Carla in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Una relazione stabile",
+                        "Un'illusione di felicità",
+                        "Una critica alla borghesia"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e il dottor S in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Una terapia di successo",
+                        "Un tentativo fallito di cura",
+                        "Una critica alla psicanalisi"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e la moglie Augusta in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Un'armonia perfetta",
+                        "Un contrasto tra malattia e salute",
+                        "Una critica al matrimonio borghese"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e il padre in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Un rapporto di affetto",
+                        "Un conflitto irrisolto",
+                        "Una critica alla famiglia borghese"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e Guido Speier in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Una lotta di classe",
+                        "Un confronto tra inetto e uomo di successo",
+                        "Un'amicizia fraterna"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e la psicanalisi in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Una terapia di successo",
+                        "Un tentativo fallito di autoanalisi",
+                        "Una critica alla psicanalisi"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e la società borghese in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Una piena integrazione",
+                        "Un conflitto interiore",
+                        "Una critica al capitalismo"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e la malattia in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Un problema fisico",
+                        "Una condizione esistenziale",
+                        "Una metafora della società"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e il fumo in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Una forma di ribellione",
+                        "Un simbolo della sua debolezza",
+                        "Una critica alla società"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e la moglie Augusta in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Un'armonia perfetta",
+                        "Un contrasto tra malattia e salute",
+                        "Una critica al matrimonio borghese"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il rapporto tra Zeno e il padre in 'La Coscienza di Zeno'?",
+                    options: [
+                        "Un rapporto di affetto",
+                        "Un conflitto irrisolto",
+                        "Una critica alla famiglia borghese"
+                    ],
+                    correct: 1
+                }
+            ],
+            
+            pasolini: [
+                {
+                    q: "Cosa intende Pasolini per 'mutazione antropologica'?",
+                    options: [
+                        "Evoluzione biologica della specie umana",
+                        "Trasformazione degli italiani in consumatori passivi",
+                        "Progresso tecnologico accelerato"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Perché Pasolini critica la DC?",
+                    options: [
+                        "Per la politica economica",
+                        "Per la continuità col fascismo storico",
+                        "Per la gestione dell'istruzione"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresentano le lucciole scomparse?",
+                    options: [
+                        "Un problema ecologico",
+                        "La perdita dell'innocenza contadina",
+                        "Simbolo religioso"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Come definisce Pasolini il nuovo fascismo?",
+                    options: [
+                        "Dittatura proletaria",
+                        "Fascismo sovrastorico",
+                        "Anarchia consumistica"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Quale mezzo ritiene più pericoloso del fascismo?",
+                    options: [
+                        "La televisione",
+                        "Il consumismo",
+                        "L'automobile"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa denunciano gli 'Scritti corsari'?",
+                    options: [
+                        "Corruzione della DC",
+                        "Genocidio culturale della società di massa",
+                        "Inquinamento ambientale"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta Edipo in 'Teorema'?",
+                    options: [
+                        "Il conflitto generazionale",
+                        "La crisi della borghesia industriale",
+                        "La lotta di classe"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa simboleggia il 'gattopardo' pasoliniano?",
+                    options: [
+                        "La resistenza partigiana",
+                        "L'omologazione culturale",
+                        "La bellezza artistica"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Perché Pasolini usa la metafora delle lucciole?",
+                    options: [
+                        "Criticare l'inquinamento luminoso",
+                        "Rappresentare la scomparsa delle culture popolari",
+                        "Celebrare la natura italiana"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa critica ne 'La Ricotta'?",
+                    options: [
+                        "Censura fascista",
+                        "Ipocrisia della Chiesa e del capitalismo",
+                        "Tradizioni contadine"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il Terzo Mondo per Pasolini?",
+                    options: [
+                        "Una speranza di resistenza al consumismo",
+                        "Un simbolo di arretratezza",
+                        "Un modello di sviluppo capitalistico"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa critica Pasolini nei mass media?",
+                    options: [
+                        "La loro capacità di omologare la società",
+                        "La mancanza di tecnologia",
+                        "La diffusione di notizie false"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'genocidio culturale' per Pasolini?",
+                    options: [
+                        "La distruzione delle culture popolari",
+                        "La repressione politica",
+                        "La crisi economica"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'fascismo sovrastorico'?",
+                    options: [
+                        "Una forma di fascismo più subdola e culturale",
+                        "Il regime di Mussolini",
+                        "Una dittatura militare"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa critica Pasolini nel 'miracolo economico' italiano?",
+                    options: [
+                        "L'omologazione culturale e la perdita di identità",
+                        "La mancanza di crescita economica",
+                        "L'eccessivo sviluppo tecnologico"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta la 'sirena neocapitalistica' per Pasolini?",
+                    options: [
+                        "Il fascino ingannevole del consumismo",
+                        "Un simbolo di progresso",
+                        "Una critica alla musica moderna"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'linguaggio omologato' per Pasolini?",
+                    options: [
+                        "La perdita della ricchezza linguistica e culturale",
+                        "L'uso eccessivo dei dialetti",
+                        "La diffusione dell'inglese"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'popolo italiano arcaico' per Pasolini?",
+                    options: [
+                        "Una cultura autentica ormai scomparsa",
+                        "Un simbolo di arretratezza",
+                        "Una speranza per il futuro"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa critica Pasolini nella DC?",
+                    options: [
+                        "La continuità con il fascismo storico",
+                        "La mancanza di democrazia",
+                        "La corruzione politica"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'consumismo' per Pasolini?",
+                    options: [
+                        "Una forma di repressione più subdola del fascismo",
+                        "Un simbolo di progresso",
+                        "Una critica alla povertà"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'cinema' per Pasolini?",
+                    options: [
+                        "Uno strumento di denuncia sociale",
+                        "Una forma di intrattenimento",
+                        "Un mezzo di propaganda"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'giornalismo' per Pasolini?",
+                    options: [
+                        "Un mezzo per diffondere la sua critica sociale",
+                        "Una forma di intrattenimento",
+                        "Un strumento di propaganda"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'linguaggio tecnico-scientifico' per Pasolini?",
+                    options: [
+                        "Una semplificazione impoverente della lingua",
+                        "Un progresso culturale",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'boom economico' per Pasolini?",
+                    options: [
+                        "Una trasformazione irreversibile della società",
+                        "Un periodo di prosperità",
+                        "Una crisi economica"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'fascismo democristiano' per Pasolini?",
+                    options: [
+                        "Una forma di fascismo più subdola e culturale",
+                        "Il regime di Mussolini",
+                        "Una dittatura militare"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'popolo italiano' per Pasolini?",
+                    options: [
+                        "Una cultura autentica ormai scomparsa",
+                        "Un simbolo di arretratezza",
+                        "Una speranza per il futuro"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'linguaggio unico' per Pasolini?",
+                    options: [
+                        "La perdita della ricchezza linguistica e culturale",
+                        "L'uso eccessivo dei dialetti",
+                        "La diffusione dell'inglese"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'cinema di Pasolini'?",
+                    options: [
+                        "Uno strumento di denuncia sociale",
+                        "Una forma di intrattenimento",
+                        "Un mezzo di propaganda"
+                    ],
+                    correct: 0
+                }
+            ],
+            
+            opere_pasolini: [
+                {
+                    q: "Cosa denunciano gli 'Scritti corsari'?",
+                    options: [
+                        "Corruzione della DC",
+                        "Genocidio culturale della società di massa",
+                        "Inquinamento ambientale"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta Edipo in 'Teorema'?",
+                    options: [
+                        "Il conflitto generazionale",
+                        "La crisi della borghesia industriale",
+                        "La lotta di classe"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa simboleggia il 'gattopardo' pasoliniano?",
+                    options: [
+                        "La resistenza partigiana",
+                        "L'omologazione culturale",
+                        "La bellezza artistica"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Perché Pasolini usa la metafora delle lucciole?",
+                    options: [
+                        "Criticare l'inquinamento luminoso",
+                        "Rappresentare la scomparsa delle culture popolari",
+                        "Celebrare la natura italiana"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa critica ne 'La Ricotta'?",
+                    options: [
+                        "Censura fascista",
+                        "Ipocrisia della Chiesa e del capitalismo",
+                        "Tradizioni contadine"
+                    ],
+                    correct: 1
+                },
+                {
+                    q: "Cosa rappresenta il Terzo Mondo in 'Scritti corsari'?",
+                    options: [
+                        "Una speranza di resistenza al consumismo",
+                        "Un simbolo di arretratezza",
+                        "Un modello di sviluppo capitalistico"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'genocidio culturale' in 'Scritti corsari'?",
+                    options: [
+                        "La distruzione delle culture popolari",
+                        "La repressione politica",
+                        "La crisi economica"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'fascismo sovrastorico' in 'Scritti corsari'?",
+                    options: [
+                        "Una forma di fascismo più subdola e culturale",
+                        "Il regime di Mussolini",
+                        "Una dittatura militare"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa critica Pasolini nel 'miracolo economico' in 'Scritti corsari'?",
+                    options: [
+                        "L'omologazione culturale e la perdita di identità",
+                        "La mancanza di crescita economica",
+                        "L'eccessivo sviluppo tecnologico"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta la 'sirena neocapitalistica' in 'Scritti corsari'?",
+                    options: [
+                        "Il fascino ingannevole del consumismo",
+                        "Un simbolo di progresso",
+                        "Una critica alla musica moderna"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'linguaggio omologato' in 'Nuove questioni linguistiche'?",
+                    options: [
+                        "La perdita della ricchezza linguistica e culturale",
+                        "L'uso eccessivo dei dialetti",
+                        "La diffusione dell'inglese"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'popolo italiano arcaico' in 'Scritti corsari'?",
+                    options: [
+                        "Una cultura autentica ormai scomparsa",
+                        "Un simbolo di arretratezza",
+                        "Una speranza per il futuro"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa critica Pasolini nella DC in 'Scritti corsari'?",
+                    options: [
+                        "La continuità con il fascismo storico",
+                        "La mancanza di democrazia",
+                        "La corruzione politica"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'consumismo' in 'Scritti corsari'?",
+                    options: [
+                        "Una forma di repressione più subdola del fascismo",
+                        "Un simbolo di progresso",
+                        "Una critica alla povertà"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'cinema' in 'Teorema'?",
+                    options: [
+                        "Uno strumento di denuncia sociale",
+                        "Una forma di intrattenimento",
+                        "Un mezzo di propaganda"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'giornalismo' in 'Scritti corsari'?",
+                    options: [
+                        "Un mezzo per diffondere la sua critica sociale",
+                        "Una forma di intrattenimento",
+                        "Un strumento di propaganda"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'linguaggio tecnico-scientifico' in 'Nuove questioni linguistiche'?",
+                    options: [
+                        "Una semplificazione impoverente della lingua",
+                        "Un progresso culturale",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'boom economico' in 'Scritti corsari'?",
+                    options: [
+                        "Una trasformazione irreversibile della società",
+                        "Un periodo di prosperità",
+                        "Una crisi economica"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'fascismo democristiano' in 'Scritti corsari'?",
+                    options: [
+                        "Una forma di fascismo più subdola e culturale",
+                        "Il regime di Mussolini",
+                        "Una dittatura militare"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'popolo italiano' in 'Scritti corsari'?",
+                    options: [
+                        "Una cultura autentica ormai scomparsa",
+                        "Un simbolo di arretratezza",
+                        "Una speranza per il futuro"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'linguaggio unico' in 'Nuove questioni linguistiche'?",
+                    options: [
+                        "La perdita della ricchezza linguistica e culturale",
+                        "L'uso eccessivo dei dialetti",
+                        "La diffusione dell'inglese"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il 'cinema di Pasolini'?",
+                    options: [
+                        "Uno strumento di denuncia sociale",
+                        "Una forma di intrattenimento",
+                        "Un mezzo di propaganda"
+                    ],
+                    correct: 0
+                }
+            ],
+            
+            confronto: [
+                {
+                    q: "Qual è la differenza principale tra Svevo e Pasolini?",
+                    options: [
+                        "Svevo: crisi individuale - Pasolini: crisi collettiva",
+                        "Pasolini: analisi psicologica - Svevo: analisi sociale",
+                        "Svevo: impegno politico - Pasolini: neutralità"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa accomuna Svevo e Pasolini?",
+                    options: [
+                        "Critica alla società borghese",
+                        "Uso del dialetto nelle opere",
+                        "Adesione al marxismo ortodosso"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Come vedono entrambi la modernità?",
+                    options: [
+                        "Come fattore di crisi esistenziale",
+                        "Come opportunità di progresso",
+                        "Come fenomeno neutrale"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa critica Pasolini che Svevo non affronta?",
+                    options: [
+                        "Omologazione linguistica",
+                        "Inettitudine borghese",
+                        "Psicoanalisi freudiana"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Quale autore usa più allegorie politiche?",
+                    options: [
+                        "Pasolini",
+                        "Svevo",
+                        "Entrambi allo stesso modo"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta la crisi per Svevo?",
+                    options: [
+                        "Una crisi interiore e psicologica",
+                        "Una crisi politica e sociale",
+                        "Una crisi economica"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta la crisi per Pasolini?",
+                    options: [
+                        "Una crisi culturale e collettiva",
+                        "Una crisi individuale",
+                        "Una crisi religiosa"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa accomuna i protagonisti di Svevo e Pasolini?",
+                    options: [
+                        "La difficoltà di adattarsi alla società",
+                        "La ricerca del successo economico",
+                        "L'adesione al marxismo"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta la società borghese per Svevo?",
+                    options: [
+                        "Un sistema che genera inettitudine",
+                        "Un modello di progresso",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta la società borghese per Pasolini?",
+                    options: [
+                        "Un sistema che distrugge le culture popolari",
+                        "Un modello di sviluppo",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta la malattia in Svevo?",
+                    options: [
+                        "Una condizione esistenziale",
+                        "Un problema fisico",
+                        "Una metafora della società"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta la malattia in Pasolini?",
+                    options: [
+                        "Una metafora della società malata",
+                        "Un problema fisico",
+                        "Una condizione esistenziale"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il linguaggio per Svevo?",
+                    options: [
+                        "Uno strumento di autoanalisi",
+                        "Un mezzo di propaganda",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il linguaggio per Pasolini?",
+                    options: [
+                        "Un campo di battaglia culturale",
+                        "Un mezzo di intrattenimento",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la psicanalisi per Svevo?",
+                    options: [
+                        "Uno strumento di analisi interiore",
+                        "Una terapia per guarire i malati",
+                        "Una critica alla borghesia"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la psicanalisi per Pasolini?",
+                    options: [
+                        "Una critica alla società borghese",
+                        "Una terapia per guarire i malati",
+                        "Uno strumento di analisi interiore"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la tecnologia per Svevo?",
+                    options: [
+                        "Una fonte di alienazione",
+                        "Un simbolo di progresso",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la tecnologia per Pasolini?",
+                    options: [
+                        "Una forma di omologazione culturale",
+                        "Un simbolo di progresso",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la famiglia per Svevo?",
+                    options: [
+                        "Un conflitto irrisolto",
+                        "Un modello di successo",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la famiglia per Pasolini?",
+                    options: [
+                        "Una critica alla società borghese",
+                        "Un modello di successo",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la religione per Svevo?",
+                    options: [
+                        "Un tema marginale",
+                        "Un simbolo di resistenza",
+                        "Una critica alla società"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la religione per Pasolini?",
+                    options: [
+                        "Una critica all'ipocrisia della Chiesa",
+                        "Un simbolo di resistenza",
+                        "Una forma di progresso"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la politica per Svevo?",
+                    options: [
+                        "Un tema marginale",
+                        "Un impegno attivo",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la politica per Pasolini?",
+                    options: [
+                        "Un impegno critico e denuncia",
+                        "Un tema marginale",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la cultura popolare per Svevo?",
+                    options: [
+                        "Un tema marginale",
+                        "Un simbolo di resistenza",
+                        "Una forma di progresso"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la cultura popolare per Pasolini?",
+                    options: [
+                        "Una difesa delle culture autentiche",
+                        "Un simbolo di arretratezza",
+                        "Una forma di progresso"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la modernità per Svevo?",
+                    options: [
+                        "Una fonte di alienazione",
+                        "Un simbolo di progresso",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la modernità per Pasolini?",
+                    options: [
+                        "Una forma di omologazione culturale",
+                        "Un simbolo di progresso",
+                        "Una forma di resistenza"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la morte per Svevo?",
+                    options: [
+                        "Un tema ricorrente nei suoi romanzi",
+                        "Un simbolo di resistenza",
+                        "Una forma di progresso"
+                    ],
+                    correct: 0
+                },
+                {
+                    q: "Cosa rappresenta il rapporto con la morte per Pasolini?",
+                    options: [
+                        "Una metafora della fine delle culture popolari",
+                        "Un simbolo di resistenza",
+                        "Una forma di progresso"
+                    ],
+                    correct: 0
+                }
+            ]
+        };
+
+       
+        // ★★★ SISTEMA AVANZATO ★★★
+        let currentTopic = 'svevo';
+        let currentQuestions = [];
+        let currentQuestion = 0;
+        let score = { correct: 0, total: 0 };
+
+        // Funzione per mescolare opzioni e aggiornare indice corretto
+        function shuffleOptions(question) {
+            const originalOptions = [...question.options];
+            const originalCorrect = originalOptions[question.correct];
+            
+            // Mescola le opzioni
+            const shuffledOptions = shuffleArray([...originalOptions]);
+            
+            // Trova la nuova posizione della risposta corretta
+            const newCorrectIndex = shuffledOptions.indexOf(originalCorrect);
+            
+            return {
+                ...question,
+                options: shuffledOptions,
+                correct: newCorrectIndex
+            };
+        }
+
+        // Inizializzazione
+        function initializeQuiz() {
+            const num = Math.min(30, parseInt(document.getElementById('numQuestions').value));
+            const randomize = document.getElementById('randomize').checked;
+            
+            // Salva impostazioni
+            localStorage.setItem('quizConfig', JSON.stringify({
+                num,
+                randomize,
+                topic: currentTopic
+            }));
+            
+            // Prepara e mescola domande
+            let pool = [...questions[currentTopic]];
+            if(randomize) {
+                pool = shuffleArray(pool);
+                pool = [...new Set(pool)];
+            }
+            
+            // Mescola le opzioni per ogni domanda selezionata
+            currentQuestions = pool.slice(0, num).map(q => shuffleOptions(q));
+            
+            currentQuestion = 0;
+            score = { correct: 0, total: 0 };
+            
+            loadQuestion();
+            updateScore();
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        function loadQuestion() {
+            const quizData = currentQuestions[currentQuestion];
+            document.getElementById('question').innerHTML = quizData.q;
+            document.getElementById('counter').textContent = `${currentQuestion + 1}/${currentQuestions.length}`;
+            
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            
+            quizData.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.innerHTML = option;
+                optionDiv.onclick = () => checkAnswer(index);
+                optionsContainer.appendChild(optionDiv);
+            });
+
+            document.getElementById('prevBtn').disabled = currentQuestion === 0;
+            document.getElementById('nextBtn').disabled = currentQuestion === currentQuestions.length - 1;
+        }
+
+        function checkAnswer(selectedIndex) {
+            const options = document.querySelectorAll('.option');
+            const correctIndex = currentQuestions[currentQuestion].correct;
+            
+            options.forEach((opt, index) => {
+                opt.classList.remove('correct', 'wrong');
+                if(index === correctIndex) opt.classList.add('correct');
+                if(index === selectedIndex && index !== correctIndex) opt.classList.add('wrong');
+            });
+
+            if(selectedIndex === correctIndex) score.correct++;
+            score.total++;
+            updateScore();
+        }
+
+        function updateScore() {
+            const percentage = score.total > 0 
+                ? Math.round((score.correct / score.total) * 100)
+                : 0;
+            document.getElementById('score').textContent = 
+                `Punteggio: ${score.correct}/${score.total} (${percentage}%)`;
+        }
+
+        function prevQuestion() {
+            if(currentQuestion > 0) {
+                currentQuestion--;
+                loadQuestion();
+            }
+        }
+
+        function nextQuestion() {
+            if(currentQuestion < currentQuestions.length - 1) {
+                currentQuestion++;
+                loadQuestion();
+            }
+        }
+
+        // Event listeners
+        document.querySelectorAll('.topic-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentTopic = btn.dataset.topic;
+                document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                initializeQuiz();
+            });
+        });
+
+        document.getElementById('numQuestions').addEventListener('change', initializeQuiz);
+        document.getElementById('randomize').addEventListener('change', initializeQuiz);
+
+        // Carica impostazioni salvate
+        window.onload = () => {
+            const savedConfig = localStorage.getItem('quizConfig');
+            if(savedConfig) {
+                const { num, randomize, topic } = JSON.parse(savedConfig);
+                document.getElementById('numQuestions').value = num;
+                document.getElementById('randomize').checked = randomize;
+                currentTopic = topic;
+                document.querySelector(`[data-topic="${topic}"]`).click();
+            } else {
+                initializeQuiz();
+            }
+        };
+    </script>
+</body>
+</html>
